@@ -1,5 +1,5 @@
 (ns factjor.core
-  (:refer-clojure :exclude [drop keep
+  (:refer-clojure :exclude [eval drop keep
                             + - * / < <= = >= > not=
                             inc dec
                             pr prn print println]))
@@ -13,13 +13,13 @@
     (apply f stack)
     (conj stack word)))
 
-(defn run
-  ([queue] (run '() queue))
+(defn eval
+  ([queue] (eval '() queue))
   ([stack queue]
     (reduce execute* stack queue)))
 
-(defn cat [& queue]
-  (run queue))
+(defn run [& queue]
+  (eval queue))
 
 (defn- word [f]
   (with-meta (fn [& args]
@@ -33,7 +33,7 @@
 
 (defmacro defword [name effect & body]
   `(def ~name (word (fn ~name [~'& ~'$]
-                      (run ~'$ ~(vec body))))))
+                      (eval ~'$ ~(vec body))))))
 
 
 ;;; Kernel
@@ -44,7 +44,7 @@
   (execute* $ word))
 
 (defprim call [quot -- ]
-  (run $ quot))
+  (eval $ quot))
 
 
 ;;; Shuffle words
@@ -88,7 +88,7 @@
 (defop1 dec clojure.core/dec)
 
 (defop2 + clojure.core/+)
-(defop2 - clojure.core/+)
+(defop2 - clojure.core/-)
 (defop2 * clojure.core/*)
 (defop2 / clojure.core//)
 (defop2 < clojure.core/<)
@@ -104,10 +104,10 @@
 
 ;; Preserving combinators
 ; dip combinators: invoke the quotation at the top of stack, hiding some values
-(defprim dip [x quot] (conj (run $ quot) x))
-(defprim dip2 [x y quot] (conj (run $ quot) x y))
-(defprim dip3 [x y z quot] (conj (run $ quot) x y z))
-(defprim dip4 [x y z w quot] (conj (run $ quot) x y z w))
+(defprim dip [x quot] (conj (eval $ quot) x))
+(defprim dip2 [x y quot] (conj (eval $ quot) x y))
+(defprim dip3 [x y z quot] (conj (eval $ quot) x y z))
+(defprim dip4 [x y z w quot] (conj (eval $ quot) x y z w))
 ; keep combinators: invoke a quotation and restore some number of values
 (defword keep [..a x quot[..a x -- ..b] -- ..b x]
   over [call] dip)
@@ -141,22 +141,22 @@
 
 (comment
 
-  (cat 1 2 clear)
+  (run 1 2 clear)
 
-  (cat 1 dup)
+  (run 1 dup)
 
-  (cat 5 10 swap)
+  (run 5 10 swap)
 
-  (cat 5 10 drop)
+  (run 5 10 drop)
 
-  (cat 3 5 plus)
+  (run 3 5 plus)
 
-  (cat 3 (+ 5))
+  (run 3 (+ 5))
 
-  (cat 5 [10 +] call)
+  (run 5 [10 +] call)
 
-  (cat 10 15 [inc] dip)
+  (run 10 15 [inc] dip)
 
-  (cat 10 [inc] keep)
+  (run 10 [inc] keep)
 
   )
