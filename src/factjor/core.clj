@@ -21,7 +21,7 @@
 (defn run [& queue]
   (eval queue))
 
-(defn- word [f]
+(defn word [f]
   (with-meta (fn [& args]
                (word (apply partial f args)))
              {::impl f}))
@@ -43,7 +43,7 @@
 (defprim execute [word]
   (execute* $ word))
 
-(defprim call [quot -- ]
+(defprim call [quot --]
   (eval $ quot))
 
 
@@ -91,6 +91,7 @@
 (defop2 - clojure.core/-)
 (defop2 * clojure.core/*)
 (defop2 / clojure.core//)
+(defop2 div clojure.core//) ;;TODO dopey divide operator!
 (defop2 < clojure.core/<)
 (defop2 > clojure.core/>)
 (defop2 = clojure.core/=)
@@ -159,4 +160,4 @@
 
   (run 10 [inc] keep)
 
-  )
+)
