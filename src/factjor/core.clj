@@ -1,15 +1,20 @@
 (ns factjor.core
   (:refer-clojure :exclude [eval drop keep
+                            identical? =
                             + - * / < <= = >= > not=
                             inc dec
-                            pr prn print println]))
+                            pr prn print println
+                            and or not boolean
+                            when when-not
+                            while]))
 
+;;;; Interpreter
 
 (defn- impl [word]
   (-> word meta ::impl))
 
 (defn- execute* [stack word]
-  (if-let [f (-> word meta ::impl)]
+  (if-let [f (impl word)]
     (apply f stack)
     (conj stack word)))
 
@@ -20,6 +25,9 @@
 
 (defn run [& queue]
   (eval queue))
+
+
+;;;; Forms for defining words
 
 (defn word [f]
   (with-meta (fn [& args]
@@ -35,8 +43,19 @@
   `(def ~name (word (fn ~name [~'& ~'$]
                       (eval ~'$ ~(vec body))))))
 
+;;; Convenience macros for making words out of Clojure functions
 
-;;; Kernel
+(defmacro defvoid1 [name f]
+  `(defprim ~name [x#] (~f x#) ~'$))
+
+(defmacro defop1 [name f]
+  `(defprim ~name [x#] (conj ~'$ (~f x#))))
+
+(defmacro defop2 [name f]
+  `(defprim ~name [x# y#] (conj ~'$ (~f x# y#))))
+
+
+;;;; Kernel
 
 (defprim clear [] nil)
 
@@ -68,37 +87,44 @@
 (defprim swap [x y] (conj $ y x))
 
 
-;;; Import some stuff from clojure.core
+;;;; Objects
 
-(defmacro defvoid1 [name f]
-  `(defprim ~name [x#] (~f x#) ~'$))
+;;; Equality
 
-(defmacro defop1 [name f]
-  `(defprim ~name [x#] (conj ~'$ (~f x#))))
+(defop2 identical? clojure.core/identical?)
+(defop2 = clojure.core/=)
+(defop2 not= clojure.core/not=)
 
-(defmacro defop2 [name f]
-  `(defprim ~name [x# y#] (conj ~'$ (~f x# y#))))
+;;; Linear order
 
-(defvoid1 pr clojure.core/pr)
-(defvoid1 prn clojure.core/prn)
-(defvoid1 print clojure.core/print)
-(defvoid1 println clojure.core/println)
+(defop2 < clojure.core/<)
+(defop2 > clojure.core/>)
+(defop2 <= clojure.core/<=)
+(defop2 >= clojure.core/>=)
 
-(defop1 inc clojure.core/inc)
-(defop1 dec clojure.core/dec)
+
+;;;; Basic data types
+
+;;; Booleans
+
+(defop1 boolean clojure.core/boolean)
+(defop2 or clojure.core/or)
+(defop2 and clojure.core/and)
+(defop1 not clojure.core/not)
+
+;;; Numbers
 
 (defop2 + clojure.core/+)
 (defop2 - clojure.core/-)
 (defop2 * clojure.core/*)
 (defop2 / clojure.core//)
 (defop2 div clojure.core//) ;;TODO dopey divide operator!
-(defop2 < clojure.core/<)
-(defop2 > clojure.core/>)
-(defop2 = clojure.core/=)
-(defop2 <= clojure.core/<=)
-(defop2 >= clojure.core/>=)
-(defop2 not= clojure.core/not=)
 
+(defop1 inc clojure.core/inc)
+(defop1 dec clojure.core/dec)
+
+
+;;;; Combinators
 
 ;;; Dataflow combinators
 ; Factor uses number prefixes, such as 2dip, but Clojure can't, so we suffix
@@ -140,24 +166,52 @@
 (defword tri2& [u v w x y z quot --] dup dup tri2*)
 
 
+;;; Conditional Combinators
+
+(defprim branch [bool then else --]
+  (eval $ (if bool then else)))
+
+(defprim choose [bool if-true if-false -- value]
+  (conj $ (if bool if-true if-false)))
+
+(defprim when [bool then]
+  (if bool (eval $ then) $))
+
+(defprim when-not [bool else]
+  (if bool $ (eval $ else)))
+
+
+;;; Looping combinators
+
+(defprim while [pred body --]
+  (loop [$ $]
+    (let [[bool & $] (eval $ pred)]
+      (if bool
+        (recur (eval $ body))
+        $))))
+
+
+;;; Compositional combinators
+
+
+;;; Short-circuit combinators
+
+
+
+;;;; Other stdlib stuff
+
+;;; Printing
+
+(defvoid1 pr clojure.core/pr)
+(defvoid1 prn clojure.core/prn)
+(defvoid1 print clojure.core/print)
+(defvoid1 println clojure.core/println)
+
+
+
+
 (comment
 
-  (run 1 2 clear)
-
-  (run 1 dup)
-
-  (run 5 10 swap)
-
-  (run 5 10 drop)
-
-  (run 3 5 plus)
-
-  (run 3 (+ 5))
-
-  (run 5 [10 +] call)
-
-  (run 10 15 [inc] dip)
-
-  (run 10 [inc] keep)
+  (run 1 2 3 4 5 [dup 3 >=] [drop] while)
 
 )
