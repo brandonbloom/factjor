@@ -1,47 +1,45 @@
 (ns factjor.core
-  (:refer-clojure :exclude [eval drop keep
+  (:refer-clojure :exclude [drop keep
                             identical? =
                             + - * / < <= = >= > not=
                             inc dec
                             pr prn print println
                             and or not boolean
                             when when-not
-                            while]))
+                            while])
+  (:require [factjor.runtime :as rt]))
 
-;;;; Interpreter
 
-(defn- impl [word]
-  (-> word meta ::impl))
-
-(defn- execute* [stack word]
-  (if-let [f (impl word)]
-    (apply f stack)
-    (conj stack word)))
-
-(defn eval
-  ([queue] (eval '() queue))
-  ([stack queue]
-    (reduce execute* stack queue)))
-
-(defn run [& queue]
-  (eval queue))
+(defn go [& program]
+  (-> program rt/create-interpreter rt/run :data))
 
 
 ;;;; Forms for defining words
 
-(defn word [f]
-  (with-meta (fn [& args]
-               (word (apply partial f (reverse args))))
-             {::impl f}))
+;; Anaphoric conventions:
+;;    $   stack         $ is for Stack!
+;;   <>   program       (inspired by Perl stdin)
+;;   <$>  interpreter   This one should be obvious
 
-(defmacro defprim [name effect & body]
+(defn- word-name [sym]
+  (symbol (str (ns-name *ns*)) (name sym)))
+
+(defmacro defprim
+  "Defines a word with an implementation body, which returns a new data stack.
+  Anaphoric: stack $, interpreter <$>"
+  [word effect & body]
   (let [args (take-while (complement '#{--}) effect)]
-    ` (def ~name (word (fn ~name [~@(reverse args) ~'& ~'$]
-                         ~@body)))))
+    `(def ~word
+       (factjor.runtime.Primitive. '~(word-name word)
+         (fn ~word [interpreter#]
+           (let [[~@(reverse args) ~'& ~'$] (:data interpreter#)
+                 ~'<$> (assoc interpreter# :data ~'$)]
+             ~@body))))))
 
-(defmacro defword [name effect & body]
-  `(def ~name (word (fn ~name [~'& ~'$]
-                      (eval ~'$ ~(vec body))))))
+(defmacro defword [word effect & body]
+  `(def ~word
+     (factjor.runtime.Word. '~(word-name word) ~(vec body))))
+
 
 ;;; Convenience macros for making words out of Clojure functions
 
@@ -60,10 +58,19 @@
 (defprim clear [] nil)
 
 (defprim execute [word]
-  (execute* $ word))
+  (rt/execute $ word))
+
+(defmacro call$ [callable]
+  `(:data (rt/call ~'<$> ~callable)))
 
 (defprim call [quot --]
-  (eval $ quot))
+  (call$ quot))
+
+(defprim callable? [obj -- bool]
+  (conj $ (rt/callable? obj)))
+
+(defprim word? [obj -- bool]
+  (conj $ (rt/word? obj)))
 
 
 ;;; Shuffle words
@@ -131,10 +138,10 @@
 
 ;; Preserving combinators
 ; dip combinators: invoke the quotation at the top of stack, hiding some values
-(defprim dip [x quot] (conj (eval $ quot) x))
-(defprim dip2 [x y quot] (conj (eval $ quot) x y))
-(defprim dip3 [x y z quot] (conj (eval $ quot) x y z))
-(defprim dip4 [x y z w quot] (conj (eval $ quot) x y z w))
+(defprim dip  [x       quot] (conj (call$ quot) x      ))
+(defprim dip2 [x y     quot] (conj (call$ quot) x y    ))
+(defprim dip3 [x y z   quot] (conj (call$ quot) x y z  ))
+(defprim dip4 [x y z w quot] (conj (call$ quot) x y z w))
 ; keep combinators: invoke a quotation and restore some number of values
 (defword keep [..a x quot[..a x -- ..b] -- ..b x]
   over [call] dip)
@@ -169,25 +176,27 @@
 ;;; Conditional Combinators
 
 (defprim branch [bool then else --]
-  (eval $ (if bool then else)))
+  (call$ (if bool then else)))
 
 (defprim choose [bool if-true if-false -- value]
   (conj $ (if bool if-true if-false)))
 
 (defprim when [bool then]
-  (if bool (eval $ then) $))
+  (if bool (call$ then) $))
 
 (defprim when-not [bool else]
-  (if bool $ (eval $ else)))
+  (if bool $ (call$ else)))
 
 
 ;;; Looping combinators
 
 (defprim while [pred body --]
-  (loop [$ $]
-    (let [[bool & $] (eval $ pred)]
+  (loop [<$> <$>]
+    (let [<$> (rt/call <$> pred)
+          [bool & $] (:data <$>)
+          <$> (assoc <$> :data $)]
       (if bool
-        (recur (eval $ body))
+        (recur (rt/call <$> body))
         $))))
 
 
@@ -206,13 +215,3 @@
 (defvoid1 prn clojure.core/prn)
 (defvoid1 print clojure.core/print)
 (defvoid1 println clojure.core/println)
-
-
-(defprim foo [x y z -- w]
-  (conj $ x))
-
-(comment
-
-  (run (- 5 3))
-
-)
