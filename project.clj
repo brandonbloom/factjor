@@ -1,4 +1,4 @@
-(defproject factjor "0.1.0-SNAPSHOT"
+(defproject factjor "0.2.0-SNAPSHOT"
   :description "A Factor-inspired, concatenative DSL for Clojure"
   :url "https://github.com/brandonbloom/factjor"
   :license {:name "Eclipse Public License"

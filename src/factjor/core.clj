@@ -31,7 +31,7 @@
 
 (defn word [f]
   (with-meta (fn [& args]
-               (word (apply partial f args)))
+               (word (apply partial f (reverse args))))
              {::impl f}))
 
 (defmacro defprim [name effect & body]
@@ -208,10 +208,11 @@
 (defvoid1 println clojure.core/println)
 
 
-
+(defprim foo [x y z -- w]
+  (conj $ x))
 
 (comment
 
-  (run 1 2 3 4 5 [dup 3 >=] [drop] while)
+  (run (- 5 3))
 
 )
