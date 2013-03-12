@@ -18,6 +18,11 @@
 
 (deftype Primitive [sym f]
   IWord
+  clojure.lang.Named
+  (getNamespace [this]
+    (namespace sym))
+  (getName [_]
+    (name sym))
   java.lang.Object
   (toString [_]
     (str sym " " f))
@@ -34,6 +39,11 @@
 
 (deftype Word [sym body]
   IWord
+  clojure.lang.Named
+  (getNamespace [this]
+    (namespace sym))
+  (getName [_]
+    (name sym))
   java.lang.Object
   (toString [_]
     (str sym " " body))
