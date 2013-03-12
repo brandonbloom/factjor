@@ -29,6 +29,9 @@
     sym)
   )
 
+(defn primitive [sym f]
+  (Primitive. sym f))
+
 (deftype Word [sym body]
   IWord
   java.lang.Object
@@ -41,6 +44,9 @@
   (-literal [_]
     sym)
   )
+
+(defn word [sym body]
+  (Word. sym body))
 
 (defn word? [obj]
   (satisfies? IWord obj))

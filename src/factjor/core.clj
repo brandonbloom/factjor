@@ -30,7 +30,7 @@
   [word effect & body]
   (let [args (take-while (complement '#{--}) effect)]
     `(def ~word
-       (factjor.runtime.Primitive. '~(word-name word)
+       (rt/primitive '~(word-name word)
          (fn ~word [interpreter#]
            (let [[~@(reverse args) ~'& ~'$] (:data interpreter#)
                  ~'<$> (assoc interpreter# :data ~'$)]
@@ -38,7 +38,7 @@
 
 (defmacro defword [word effect & body]
   `(def ~word
-     (factjor.runtime.Word. '~(word-name word) ~(vec body))))
+     (rt/word '~(word-name word) ~(vec body))))
 
 
 ;;; Convenience macros for making words out of Clojure functions
