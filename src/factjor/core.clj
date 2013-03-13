@@ -12,7 +12,7 @@
   (:require [factjor.runtime :as rt]))
 
 
-(defn go [& program]
+(defn run [& program]
   (-> program rt/create-interpreter rt/run :data))
 
 
