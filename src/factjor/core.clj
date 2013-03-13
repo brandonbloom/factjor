@@ -5,8 +5,10 @@
                             inc dec
                             pr prn print println
                             and or not boolean
+                            count
                             when when-not
-                            while])
+                            while
+                            first next rest nth])
   (:require [factjor.runtime :as rt]))
 
 
@@ -42,15 +44,26 @@
 
 
 ;;; Convenience macros for making words out of Clojure functions
+;;TODO would be better to have a generalized version built from stack effect
+;;^^ This exists in DomScript! TODO move it here.
+
+(defmacro defvoid0 [name f]
+  `(defprim ~name [] (~f) ~'$))
 
 (defmacro defvoid1 [name f]
   `(defprim ~name [x#] (~f x#) ~'$))
+
+(defmacro defop0 [name f]
+  `(defprim ~name [] (conj ~'$ (~f))))
 
 (defmacro defop1 [name f]
   `(defprim ~name [x#] (conj ~'$ (~f x#))))
 
 (defmacro defop2 [name f]
   `(defprim ~name [x# y#] (conj ~'$ (~f x# y#))))
+
+(defmacro defop3 [name f]
+  `(defprim ~name [x# y# z#] (conj ~'$ (~f x# y# z#))))
 
 
 ;;;; Kernel
@@ -215,3 +228,16 @@
 (defvoid1 prn clojure.core/prn)
 (defvoid1 print clojure.core/print)
 (defvoid1 println clojure.core/println)
+
+;;; Collections
+
+(defop1 count clojure.core/count)
+
+;;; Sequentials
+
+(defop1 first clojure.core/first)
+;; Should return vectors & also provide -slice variants that return subvecs
+;(defop1 next clojure.core/next)
+;(defop1 rest clojure.core/rest)
+(defop2 nth clojure.core/nth)
+(defop3 nth-or clojure.core/nth)
