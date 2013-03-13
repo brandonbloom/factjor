@@ -14,10 +14,19 @@
 (defprotocol FactjorObject
   (-literal [obj]))
 
-(defprotocol IWord)
+(defprotocol IWord
+  (-sym [obj]))
+
+(defn word? [obj]
+  (satisfies? IWord obj))
+
+(defn sym [x]
+  (when (word? x)
+    (-sym x)))
 
 (deftype Primitive [sym f]
   IWord
+  (-sym [_] sym)
   clojure.lang.Named
   (getNamespace [this]
     (namespace sym))
@@ -39,6 +48,7 @@
 
 (deftype Word [sym body]
   IWord
+  (-sym [_] sym)
   clojure.lang.Named
   (getNamespace [this]
     (namespace sym))
@@ -57,9 +67,6 @@
 
 (defn word [sym body]
   (Word. sym body))
-
-(defn word? [obj]
-  (satisfies? IWord obj))
 
 (defn call [interpreter callable]
   (let [interpreter* (update-in interpreter [:call] conj callable)]
