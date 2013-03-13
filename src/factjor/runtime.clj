@@ -14,6 +14,9 @@
 (defprotocol FactjorObject
   (-literal [obj]))
 
+(defn literal [x]
+  (-literal x))
+
 (defprotocol IWord
   (-sym [obj]))
 
@@ -34,7 +37,7 @@
     (-call word (apply update-in interpreter [:data] conj args)))
   FactjorObject
   (-literal [_]
-    (list* (-sym word) args))
+    (list* (-sym word) (map literal args)))
   )
 
 (defn curried-word [word & args]
@@ -208,4 +211,27 @@
     (:data (reduce execute interpreter callable))))
 
 (extend-protocol FactjorObject
+
+  java.lang.Number
+  (-literal [x] x)
+
+  clojure.lang.Ratio
+  (-literal [x] x)
+
+  java.lang.String
+  (-literal [x] x)
+
+  java.lang.Character
+  (-literal [x] x)
+
+  clojure.lang.Keyword
+  (-literal [x] x)
+
+  clojure.lang.Symbol
+  (-literal [x] (list 'quote x))
+
+  clojure.lang.PersistentVector
+  (-literal [x]
+    (mapv literal x))
+
   )

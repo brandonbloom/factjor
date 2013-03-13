@@ -2,7 +2,7 @@
   (:use clojure.test)
   (:require [factjor.core :as cat :refer (run)]))
 
-(deftest a-test
+(deftest core-tests
   (testing "values"
     (is (empty? (run)))
     (is (= (run 1 :a \x [cat/inc]) [[cat/inc] \x :a 1])))
