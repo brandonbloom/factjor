@@ -9,7 +9,9 @@
                             when when-not
                             while
                             first next rest nth])
-  (:require [factjor.runtime :as rt]))
+  (:require [clojure.core :as cc]
+            [factjor.runtime :as rt]
+            [factjor.interop :as interop :refer (cat-ops)]))
 
 
 (defn run [& program]
@@ -41,29 +43,6 @@
 (defmacro defword [word effect & body]
   `(def ~word
      (rt/word '~(word-name word) ~(vec body))))
-
-
-;;; Convenience macros for making words out of Clojure functions
-;;TODO would be better to have a generalized version built from stack effect
-;;^^ This exists in DomScript! TODO move it here.
-
-(defmacro defvoid0 [name f]
-  `(defprim ~name [] (~f) ~'$))
-
-(defmacro defvoid1 [name f]
-  `(defprim ~name [x#] (~f x#) ~'$))
-
-(defmacro defop0 [name f]
-  `(defprim ~name [] (conj ~'$ (~f))))
-
-(defmacro defop1 [name f]
-  `(defprim ~name [x#] (conj ~'$ (~f x#))))
-
-(defmacro defop2 [name f]
-  `(defprim ~name [x# y#] (conj ~'$ (~f x# y#))))
-
-(defmacro defop3 [name f]
-  `(defprim ~name [x# y# z#] (conj ~'$ (~f x# y# z#))))
 
 
 ;;;; Kernel
@@ -111,37 +90,43 @@
 
 ;;; Equality
 
-(defop2 identical? clojure.core/identical?)
-(defop2 = clojure.core/=)
-(defop2 not= clojure.core/not=)
+(cat-ops cc
+  identical? [x y -- ?]
+  =          [x y -- ?]
+  not=       [x y -- ?])
 
 ;;; Linear order
 
-(defop2 < clojure.core/<)
-(defop2 > clojure.core/>)
-(defop2 <= clojure.core/<=)
-(defop2 >= clojure.core/>=)
+(cat-ops cc
+  < [x y -- ?]
+  > [x y -- ?]
+  <= [x y -- ?]
+  >= [x y -- ?])
 
 
 ;;;; Basic data types
 
 ;;; Booleans
 
-(defop1 boolean clojure.core/boolean)
-(defop2 or clojure.core/or)
-(defop2 and clojure.core/and)
-(defop1 not clojure.core/not)
+(cat-ops cc
+  boolean [x -- ?]
+  or [x y -- ?]
+  and [x y -- ?]
+  not [x -- ?])
 
 ;;; Numbers
 
-(defop2 + clojure.core/+)
-(defop2 - clojure.core/-)
-(defop2 * clojure.core/*)
-(defop2 / clojure.core//)
-(defop2 div clojure.core//) ;;TODO dopey divide operator!
+(cat-ops cc
+  + [x y -- z]
+  - [x y -- z]
+  * [x y -- z]
+  / [x y -- z]
+  inc [x -- y]
+  dec [x -- y])
 
-(defop1 inc clojure.core/inc)
-(defop1 dec clojure.core/dec)
+;; Dopey Clojure Reader bug! CLJ-873
+(defprim div [x y -- z]
+  (conj $ (clojure.core// x y)))
 
 
 ;;;; Combinators
@@ -224,19 +209,23 @@
 
 ;;; Printing
 
-(defvoid1 pr clojure.core/pr)
-(defvoid1 prn clojure.core/prn)
-(defvoid1 print clojure.core/print)
-(defvoid1 println clojure.core/println)
+(cat-ops cc
+  pr      [x --]
+  prn     [x --]
+  print   [x --]
+  println [x --])
 
 ;;; Collections
-(defop1 count clojure.core/count)
+
+(cat-ops cc
+  count [coll -- n])
 
 ;;; Sequentials
 
-(defop1 first clojure.core/first)
+(cat-ops cc
+  first [coll -- x]
+  nth [coll index -- x])
+; nth-or ; 3 argument version of nth
 ;; Should return vectors & also provide -slice variants that return subvecs
-;(defop1 next clojure.core/next)
-;(defop1 rest clojure.core/rest)
-(defop2 nth clojure.core/nth)
-(defop3 nth-or clojure.core/nth)
+;next clojure.core/next)
+;rest clojure.core/rest)

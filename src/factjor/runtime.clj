@@ -24,7 +24,7 @@
   (when (word? x)
     (-sym x)))
 
-(deftype CurriedWord [word args]
+(deftype CurriedWord [word args] ;TODO  _hash _meta
   IWord
   java.lang.Object
   (toString [_]
@@ -40,7 +40,7 @@
 (defn curried-word [word & args]
   (CurriedWord. word args))
 
-(deftype Primitive [sym f]
+(deftype Primitive [sym f] ;TODO  _hash _meta
   IWord
   (-sym [_] sym)
   clojure.lang.Named
@@ -203,7 +203,7 @@
       interpreter*)))
 
 (extend-protocol ICallable
-  clojure.lang.Sequential
+  clojure.lang.Sequential ; should be on Vector and Quotation, not Sequential ;TODO why?
   (-call [callable interpreter]
     (:data (reduce execute interpreter callable))))
 
