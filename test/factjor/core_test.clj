@@ -78,7 +78,7 @@
     )
   (testing "looping combinators"
     (is (= (go 1 2 3 4 5 [cat/dup 3 cat/>=] [cat/drop] cat/while) [2 1])))
-  ;(testing "Clojure interop: currying"
-  ;  (is (= (go 5 (cat/- 3)) [2]))
-  ;  (is (= (go (cat/- 5 3)) [2])))
+  (testing "Clojure interop: currying"
+    (is (= (go 5 (cat/- 3)) [2]))
+    (is (= (go (cat/- 5 3)) [2])))
   )
