@@ -182,12 +182,12 @@
     (try
       (let [stack (-call callable interpreter*)]
         (assoc interpreter :data stack))
-    (catch clojure.lang.ExceptionInfo e
-      (throw e))
-    (catch Exception e
-      (ex-info (str "Factjor exception: " e)
-               {:interpreter interpreter*}
-               e)))))
+      (catch clojure.lang.ExceptionInfo e
+        (throw e))
+      (catch Exception e
+        (ex-info (str "Factjor exception: " e)
+                 {:interpreter interpreter*}
+                 e)))))
 
 (defn execute [interpreter word]
   (if (word? word)

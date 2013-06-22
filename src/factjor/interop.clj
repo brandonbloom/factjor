@@ -1,6 +1,5 @@
 (ns factjor.interop
-  "Utilities for interop with Applicative Clojure"
-  (:require [factjor.runtime :as rt]))
+  "Utilities for interop with Applicative Clojure")
 
 ;;TODO Move to appropriate namespace
 (defn parse-stack-effect [effect]
