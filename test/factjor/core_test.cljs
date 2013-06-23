@@ -1,6 +1,6 @@
 (ns factjor.core-test
-  (:use clojure.test)
-  (:require [factjor.core :as cat :refer (run)]))
+  (:require [factjor.core :as cat :refer (run)])
+  (:use-macros [factjor.test-helpers :only (deftest testing is)]))
 
 (deftest core-tests
   (testing "values"

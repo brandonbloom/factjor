@@ -29,7 +29,7 @@
 
 (deftype CurriedWord [word args] ;TODO  _hash _meta
   IWord
-  java.lang.Object
+  Object
   (toString [_]
     (str word " " args))
   ICallable
@@ -46,12 +46,12 @@
 (deftype Primitive [sym f] ;TODO  _hash _meta
   IWord
   (-sym [_] sym)
-  clojure.lang.Named
-  (getNamespace [this]
+  INamed
+  (-namespace [this]
     (namespace sym))
-  (getName [_]
+  (-name [_]
     (name sym))
-  java.lang.Object
+  Object
   (toString [_]
     (str sym " " f))
   ICallable
@@ -60,7 +60,7 @@
   FactjorObject
   (-literal [_]
     sym)
-  clojure.lang.IFn
+  IFn
   (invoke [this]
     (curried-word this))
   (invoke [this a]
@@ -113,12 +113,12 @@
 (deftype Word [sym body]
   IWord
   (-sym [_] sym)
-  clojure.lang.Named
-  (getNamespace [this]
+  INamed
+  (-namespace [this]
     (namespace sym))
-  (getName [_]
+  (-name [_]
     (name sym))
-  java.lang.Object
+  Object
   (toString [_]
     (str sym " " body))
   ICallable
@@ -127,7 +127,7 @@
   FactjorObject
   (-literal [_]
     sym)
-  clojure.lang.IFn
+  IFn
   (invoke [this]
     (curried-word this))
   (invoke [this a]
@@ -182,9 +182,9 @@
     (try
       (let [stack (-call callable interpreter*)]
         (assoc interpreter :data stack))
-      (catch clojure.lang.ExceptionInfo e
+      (catch ExceptionInfo e
         (throw e))
-      (catch Exception e
+      (catch js/Error e
         (ex-info (str "Factjor exception: " e)
                  {:interpreter interpreter*}
                  e)))))
@@ -206,31 +206,25 @@
       interpreter*)))
 
 (extend-protocol ICallable
-  clojure.lang.Sequential ; should be on Vector and Quotation, not Sequential ;TODO why?
+  cljs.core.PersistentVector
   (-call [callable interpreter]
     (:data (reduce execute interpreter callable))))
 
 (extend-protocol FactjorObject
 
-  java.lang.Number
+  number
   (-literal [x] x)
 
-  clojure.lang.Ratio
+  string
   (-literal [x] x)
 
-  java.lang.String
+  cljs.core.Keyword
   (-literal [x] x)
 
-  java.lang.Character
-  (-literal [x] x)
-
-  clojure.lang.Keyword
-  (-literal [x] x)
-
-  clojure.lang.Symbol
+  cljs.core.Symbol
   (-literal [x] (list 'quote x))
 
-  clojure.lang.PersistentVector
+  cljs.core.PersistentVector
   (-literal [x]
     (mapv literal x))
 

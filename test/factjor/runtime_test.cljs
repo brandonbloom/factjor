@@ -1,7 +1,8 @@
 (ns factjor.runtime-test
-  (:use clojure.test)
   (:require [factjor.runtime :as rt]
-            [factjor.core :as cat :refer (defword)]))
+            [factjor.core :as cat])
+  (:use-macros [factjor.core :only (defword)]
+               [factjor.test-helpers :only (deftest testing is)]))
 
 (defword ten [-- x] 10)
 
@@ -12,8 +13,8 @@
            [["x" "y"] ["z" "w"]]))
     )
   (testing "Decoding to literals"
-    (is (= (rt/literal [5 1/2 "asdf" \A :b  'c])
-                       [5 1/2 "asdf" \A :b ''c]))
+    (is (= (rt/literal [5 "asdf" \A :b  'c])
+                       [5 "asdf" \A :b ''c]))
     (is (= (rt/literal cat/clear) ; Primitive
            'factjor.core/clear))
     (is (= (rt/literal ten) ; Word
