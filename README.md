@@ -48,7 +48,10 @@ See also: [Why Concatenative Programming Matters](http://evincarofautumn.blogspo
 (cat/run 5 (cat/- 2)) ;=> 3
 ```
 
-Lots more docs to follow when I release the project that motivated Factjor.
+This project is just an experiment, so docs will remain thin.
+The experiment continues with [DomScript](https://github.com/brandonbloom/domscript),
+a concatenative library with jQuery-style API. I'll have Lots
+more to say about concatenative programming in the future, stay tuned.
 
 
 ## License
